@@ -1,0 +1,784 @@
+/*.......................................................................
+
+ASSIGNMENT 6- 234tree
+COURSE- CSE 674
+AUTHOR- SHUBHAM RAMESH JIWTODE #870427143
+SOURCE- Prof. C-Y (ROGER) CHEN,Syracuse University.
+
+..........................................................................*/
+#include "stdafx.h"
+#include <iostream>
+#include <vector>
+using namespace std;
+
+
+class node {
+	//for simplicity, we again assume all numbers are distinct
+public:
+	int num_values;
+	vector<int> value;  //it can contain 1 ... 3 values
+	node * parent;
+	vector<node *> child;  //child[i] ( i = 0 ... 3) is a pointer to child node i
+	int child_state; //a node can have up to 4 child nodes: child 0, 1, 2, 3.  child_state i (0 ... 3) means this node is child i of its parent
+	int is_leaf; //1 if this is a leaf node; otherwise 0
+	node() { num_values = 0; is_leaf = 1; child.assign(4, nullptr); parent = nullptr; value.assign(3, -999); }
+	void add_value(int k);  //add value to a node of less than 3 value
+	void remove_value(int k); //remove value from a node of more than 1 value
+};
+
+void node::remove_value(int k) 
+{
+	if (this->value[0]==k)
+	{
+		this->value[0] = this->value[1];
+		this->value[1] = this->value[2];
+		this->value[2] = -999;
+
+		--this->num_values;
+	}else if (this->value[1] == k)
+	{
+		this->value[1] = this->value[2];
+		this->value[2] = -999;
+		--this->num_values;
+	}
+	else if (this->value[2] == k)
+	{
+		this->value[2] = -999;
+		--this->num_values;
+	}
+}
+
+void node::add_value(int k) 
+{
+	if (this->num_values==0)
+	{
+		this->value[0] = k;
+		this->num_values++;
+		return;
+	}
+   if (this->num_values == 1 && k < this->value[0])
+	{
+		this->value[1] = this->value[0];
+
+		this->value[0] = k;
+		this->num_values++;
+		return;
+	}
+	else if (this->num_values == 1 && k > this->value[0])
+	{
+		this->value[1] = k;
+		this->num_values++;
+		return;
+	}
+	if (this->num_values == 2 && k < this->value[0])
+	{
+		this->value[2] = this->value[1];
+		this->value[1] = this->value[0];
+		this->value[0] = k;
+		this->num_values++;
+		return;
+	}
+	else if (this->num_values == 2 && this->value[0] < k > this->value[1])
+	{
+		this->value[2] = this->value[1];
+		this->value[1] = k;
+		this->num_values++;
+		return;
+	} 
+	else
+	{
+		this->value[2] = k;
+		this->num_values++;
+		return;
+	}
+}
+
+
+
+class two34_tree {
+public:
+	node * root;
+	two34_tree() { root = nullptr; }
+	void add(int k);
+	node * find(int k); //find a node to add value k; invoked by add
+	void break_3_value_node(node * p); //to be invoked by find
+	void remove(int k);
+	node * find_1(int k); //find a node to replace k once k is removed; invokde by remove
+	void expand_1_value_node(node *p); //to be invoked by find_1
+	void fusion(node *p); //to be invoked by exapnd_1_value_node
+	void rotation(node *p); ////to be invoked by exapnd_1_value_node
+	void in_order_traversal(node * p);
+
+};
+
+void two34_tree::remove(int k) 
+{
+	node *x;
+	x = find_1(k);
+	x->remove_value(k);
+}
+
+node *two34_tree::find_1(int k)
+{
+	node *f = root;
+	if ((root->value[0]|| root->value[1]|| root->value[2])&&root->is_leaf==1)
+	{
+		return(root);
+	}
+	if (root->value[0]==k&&root->num_values==1&&root->child[0]->num_values==1 && root->child[1]->num_values == 1)
+	{
+		root->add_value(root->child[0]->value[0]);
+		root->add_value(root->child[1]->value[0]);
+		if (root->child[0]->is_leaf==1 && root->child[1]->is_leaf==1)
+		{
+			root->is_leaf = 1;
+		}
+		root->child[3] = root->child[1]->child[1];
+		if (root->child[3]!=nullptr)
+		{
+			root->child[3]->child_state = 3;
+		}
+		
+			root->child[2]= root->child[1]->child[0];
+			if (root->child[3] != nullptr)
+			{
+				root->child[2]->child_state = 2;
+			}
+			
+			root->child[1] = root->child[0]->child[1];
+			if (root->child[3] != nullptr)
+			{
+				root->child[1]->child_state = 1;
+			}
+			
+			root->child[0] = root->child[0]->child[0];
+			if (root->child[0] != nullptr)
+			{
+				root->child[0]->child_state = 0;
+			}
+			
+			return root;
+	}
+	while (true)
+	{
+		if (f != nullptr && k<f->value[0] && f->child[0]!=nullptr)
+		{
+			f = f->child[0];
+		}
+		else if (f != nullptr && (k==f->value[0]|| k == f->value[1]|| k == f->value[2]))
+		{
+			if (f->is_leaf==1 && f->num_values>1)
+			{
+				return f;
+			}
+			else if (f->is_leaf == 1 && f->num_values==1)///////////
+			{
+				expand_1_value_node(f);
+			}///////////////////////////////
+			
+			else
+			{
+				if (f->value[0] == k&&f->num_values>1)
+				{
+					//
+					node *x = f;
+					if (f->child[0]->num_values>1&&f->child[0]->is_leaf==1) 
+					{
+						int remove = f->value[0];
+						f->value[0] = f->child[0]->value[f->child[0]->num_values-1];
+						f->child[0]->value[f->child[0]->num_values-1] = remove;
+						return f->child[0];
+					}///////////////////////////////////////////////
+					else if (f->child[0]->num_values == 1 && f->child[0]->is_leaf == 1)
+					{
+						/////rot left
+						expand_1_value_node(f->child[0]);
+					}
+					else
+					{
+						x = x->child[0];
+						while (x->is_leaf!=1)
+						{
+							x = x->child[x->num_values];
+
+						}
+						if (x->num_values>1&&x->is_leaf==1)
+						{
+							int remove = f->value[0];
+							f->value[0] = x->value[x->num_values-1];
+							x->value[x->num_values-1] = remove;
+							return x;
+							
+						}
+						else if(x->num_values==1 && x->is_leaf == 1)
+						{
+								expand_1_value_node(x);
+						}
+					}
+					
+				}
+				else if (f->value[1] == k&&f->num_values>1)
+				{
+					node *x = f;
+					if (f->child[1]->num_values>1 && f->child[1]->is_leaf == 1)
+					{
+						int remove = f->value[1];
+						f->value[1] = f->child[1]->value[f->child[1]->num_values-1];
+						f->child[1]->value[f->child[1]->num_values-1] = remove;
+						return f->child[1];
+					}///////////////////////////////////////////////
+					else if (f->child[1]->num_values == 1 && f->child[1]->is_leaf == 1)
+					{
+						/////rot left
+						expand_1_value_node(f->child[1]);
+					}
+					else
+					{
+						x = x->child[1];
+						while (x->is_leaf != 1)
+						{
+							x = x->child[x->num_values];
+
+						}
+						if (x->num_values>1 && x->is_leaf == 1)
+						{
+							int remove = f->value[1];
+							f->value[1] = x->value[x->num_values-1];
+							x->value[x->num_values-1] = remove;
+							return x;
+
+						}
+						else if (x->num_values == 1 && x->is_leaf == 1)
+						{
+							expand_1_value_node(x);
+						}
+					}
+
+				}
+				else if (f->value[2] == k&&f->num_values>1)
+				{
+					node *x = f;
+					if (f->child[2]->num_values>1 && f->child[2]->is_leaf == 1)
+					{
+						int remove = f->value[1];
+						f->value[2] = f->child[2]->value[f->child[2]->num_values-1];
+						f->child[2]->value[f->child[2]->num_values-1] = remove;
+						return f->child[2];
+					}///////////////////////////////////////////////
+					else if (f->child[2]->num_values == 1 && f->child[2]->is_leaf == 1)
+					{
+						/////rot left
+						expand_1_value_node(f->child[2]);
+					}
+					else
+					{
+						x = x->child[2];
+						while (x->is_leaf != 1)
+						{
+							x = x->child[x->num_values];
+
+						}
+						if (x->num_values>1 && x->is_leaf == 1)
+						{
+							int remove = f->value[2];
+							f->value[2] = x->value[x->num_values-1];
+							x->value[x->num_values-1] = remove;
+							return x;
+
+						}
+						else if (x->num_values == 1 && x->is_leaf == 1)
+						{
+							expand_1_value_node(x);
+						}
+					}
+
+				}
+				else if(f->value[0] == k&& f->num_values==1)
+				{
+					node*x = f;
+					x = x->child[0];
+					while (x->is_leaf != 1)
+					{
+						x = x->child[x->num_values];
+
+					}
+					if (x->num_values>1 && x->is_leaf == 1)
+					{
+						int remove = f->value[0];
+						f->value[0] = x->value[x->num_values-1];
+						x->value[x->num_values-1] = remove;
+						return x;
+
+					}
+					else if (x->num_values == 1 && x->is_leaf == 1)
+					{
+						expand_1_value_node(x);
+					}
+					
+					
+				}
+				
+			}
+		}
+		else if (f != nullptr && f->value[0]< k && k<f->value[1] && f->child[1] != nullptr || (f != nullptr&& k>f->value[0] && f->value[1] == -999 && f->child[1] != nullptr))
+		{
+			f = f->child[1];
+		}
+		else if ((f != nullptr && f->value[1]< k && k<f->value[2] && f->child[2] != nullptr)||(f != nullptr&& k>f->value[1]&& f->value[2]==-999 && f->child[2] != nullptr))
+		{
+			f = f->child[2];
+		}
+		else if (f != nullptr && f->value[2]< k  && f->child[3] != nullptr)
+		{
+			f = f->child[3];
+		}
+		else if (f==nullptr)
+		{
+			return nullptr;
+		}
+	}
+
+}
+
+void two34_tree::expand_1_value_node(node *p)
+{
+	//have to write for root
+	/*if (p->child_state==0&&p->is_leaf==1)
+	{
+		fusion(p);
+		return;
+	}*/
+	rotation(p);
+	if (p->num_values==1)
+	{
+		fusion(p);
+	}
+	
+
+}
+
+
+void two34_tree::fusion(node *p) 
+{
+	int x = p->value[0];
+	if (p->child_state==0)
+	{
+		p->add_value(p->parent->value[0]);///doubt abt child of to be removed
+		p->add_value(p->parent->child[p->child_state + 1]->value[0]);
+		if (p->is_leaf==1&& p->parent->child[p->child_state + 1]->is_leaf==1)
+		{
+			p->is_leaf = 1;
+		}
+		else if (p->is_leaf == 0 && p->parent->child[p->child_state + 1]->is_leaf == 0)
+		{
+			p->is_leaf = 0;
+		}
+		p->child[2] = p->parent->child[p->child_state + 1]->child[0];
+		p->child[3] = p->parent->child[p->child_state + 1]->child[1];
+		p->parent->child[p->child_state + 1] = p->parent->child[p->child_state + 2];
+		if (p->parent->child[p->child_state + 1]!=nullptr)
+		{
+			p->parent->child[p->child_state + 1]->child_state = 1;
+		}
+		p->parent->child[p->child_state + 2] = p->parent->child[p->child_state + 3];
+		if (p->parent->child[p->child_state + 2] != nullptr)
+		{
+			p->parent->child[p->child_state + 2]->child_state = 2;
+		}
+		p->parent->child[p->child_state + 3] = nullptr;
+		p->parent->remove_value(p->parent->value[0]);
+		if (p->is_leaf==1)
+		{
+			return;
+		}
+		else
+		{
+			find_1(x);
+		}
+
+	}
+	else 
+	{
+		p->add_value(p->parent->value[p->child_state - 1]);
+		p->add_value(p->parent->child[p->child_state - 1]->value[0]);
+		if (p->is_leaf == 1 && p->parent->child[p->child_state -1]->is_leaf == 1)
+		{
+			p->is_leaf = 1;
+		}
+		else if (p->is_leaf == 0 && p->parent->child[p->child_state -1]->is_leaf == 0)
+		{
+			p->is_leaf = 0;
+		}
+		p->child[2] = p->parent->child[p->child_state - 1]->child[0];
+		p->child[2] = p->parent->child[p->child_state - 1]->child[1];
+		if (p->child_state==3)
+		{
+			p->parent->child[p->child_state - 1] = p->parent->child[p->child_state];
+			p->parent->child[p->child_state] = nullptr;
+		}
+		else if (p->child_state==2)
+		{
+			p->parent->child[p->child_state - 1] = p->parent->child[p->child_state];
+			p->parent->child[p->child_state] = p->parent->child[p->child_state+1];
+			p->parent->child[p->child_state+1] = nullptr;
+		}
+		else if (p->child_state == 1)
+		{
+			p->parent->child[p->child_state - 1] = p->parent->child[p->child_state];
+			p->parent->child[p->child_state] = p->parent->child[p->child_state + 1];
+			p->parent->child[p->child_state+1] = p->parent->child[p->child_state + 2];
+			p->parent->child[p->child_state + 2] = nullptr;
+		}
+		p->parent->remove_value(p->parent->value[p->child_state - 1]);
+		if (p->is_leaf == 1)
+		{
+			return;
+		}
+		else
+		{
+			find_1(x);
+		}
+	}
+}
+
+void two34_tree::rotation(node *p) {
+	if (p->num_values==1)
+	{
+		
+		node *findx = p;
+		while (findx->num_values==1 && findx->child_state != 0)//////////////////////////////////////////////
+		{
+			findx = findx->parent->child[findx->child_state -1 ];
+		}
+		if (findx->num_values>1)
+		{
+			findx->parent->child[findx->child_state + 1]->child[2] = findx->parent->child[findx->child_state + 1]->child[1];
+			findx->parent->child[findx->child_state + 1]->child[1] = findx->parent->child[findx->child_state + 1]->child[0];
+			findx->parent->child[findx->child_state + 1]->child[0]= findx->child[findx->num_values];
+			findx->child[findx->num_values] = nullptr;
+			int i = findx->value[findx->num_values];
+			int j = findx->parent->value[findx->child_state + 1];
+			findx->parent->child[findx->child_state + 1]->add_value(j);
+			findx->parent->value[findx->child_state + 1] = i;
+			findx->remove_value(i);
+			/*findx->value[findx->num_values] = -999;
+			findx->num_values--;*/
+			while (p->num_values>1)
+			{
+				rotation(p);
+			}
+			return;
+		}
+		else
+		{
+			node *findx = p;
+			while (findx->num_values==1 && findx->child_state != findx->parent->num_values)/////////////////////////////////////////////////
+			{
+				findx = findx->parent->child[findx->child_state + 1];
+			}
+			if (findx->num_values>1)
+			{
+				findx->parent->child[findx->child_state - 1]->child[2] = findx->child[0];
+				findx->child[0] = findx->child[1];
+				findx->child[1] = findx->child[2];
+				findx->child[2] = findx->child[3];
+				findx->child[3] = nullptr;
+				int k = findx->value[0];
+				int l = findx->parent->value[findx->child_state-1];
+				findx->parent->child[findx->child_state - 1]->add_value(l);
+				findx->parent->value[findx->child_state-1] = k;
+				findx->remove_value(k);
+				//rotleft
+				while (p->num_values>1)
+				{
+					rotation(p);
+				}
+				return;
+			}
+			else
+			{
+				return;//fusion
+			}
+		}
+			
+		
+	}
+
+
+}
+
+
+void two34_tree::break_3_value_node(node * p)
+{
+	if (p->value.size() == 3) 
+	{
+		if (p->parent==nullptr)
+		{
+			//node *n = new node();
+			node *n1 = new node();
+			node *n2 = new node();
+			//n->value[0] = p->value[1];
+			n1->value[0] = p->value[0];
+			n1->child[0] = p->child[0];
+			n1->child[1] = p->child[1];
+			
+			if (p->child[0] != nullptr)
+			{
+				p->child[0]->parent = n1;
+				n1->child[0]->child_state = 0;
+			}
+			if (p->child[1]!=nullptr)
+			{
+				p->child[1]->parent = n1;
+				n1->child[1]->child_state = 1;
+			}
+			p->value[0] = p->value[1];
+
+			n2->value[0] = p->value[2];
+			n2->child[0] = p->child[2];	
+			n2->child[1] = p->child[3];
+			
+			if (p->child[2] != nullptr)
+			{
+				p->child[2]->parent = n2;
+				n2->child[0]->child_state = 0;
+			}
+			if (p->child[3] != nullptr)
+			{
+				p->child[3]->parent = n2;
+				n2->child[1]->child_state = 1;
+			}
+			p->value[1] = -999;
+			p->value[2] = -999;
+			p->num_values = 1;
+			root = p;
+			p->is_leaf = 0;
+			p->child[0] = n1;
+			p->child[1] = n2;
+			p->child[2] = nullptr;
+			p->child[3] = nullptr;
+			if (n1->child[0]==nullptr&&n1->child[1] == nullptr&&n1->child[2] == nullptr&&n1->child[3] == nullptr)
+			{
+				n1->is_leaf = 1;
+			}
+			else
+			{
+				n1->is_leaf = 0;
+			}
+			
+			n1->num_values = 1;
+			if (n2->child[0] == nullptr&&n2->child[1] == nullptr&&n2->child[2] == nullptr&&n2->child[3] == nullptr)
+			{
+				n2->is_leaf = 1;
+			}
+			else
+			{
+				n2->is_leaf = 0;
+			}
+
+			n2->num_values = 1;
+			n1->parent = p;
+			n2->parent = p;
+			n1->child_state = 0;
+			n2->child_state = 1;
+
+			
+		}
+		else
+		{
+			//node *n1 = new node();
+			node *n2 = new node();
+			if (p->parent->num_values<3)
+			{
+				p->parent->add_value(p->value[1]);
+				p->parent->is_leaf = 0;
+				p->value[1] = -999;
+				n2->value[0] = p->value[2];
+				p->value[2] = -999;
+				n2->num_values = 1;
+				if (p->child[2]!=nullptr)
+				{
+					n2->child[0] = p->child[2];
+				}
+				if (p->child[3] != nullptr)
+				{
+					n2->child[1] = p->child[3];
+				}
+				p->num_values = 1;
+				
+				if (p->child_state==0)
+				{
+					p->parent->child[3] = p->parent->child[2];
+					if (p->parent->child[3] != nullptr)p->parent->child[3]->child_state = 3;
+					p->parent->child[2] = p->parent->child[1];
+					if (p->parent->child[2] != nullptr)p->parent->child[2]->child_state = 2;
+					
+					p->parent->child[1] = n2;
+					n2->child_state = 1;
+					n2->parent = p->parent;
+					p->parent->child[0] = p;
+				}
+				else if (p->child_state == 1) 
+				{
+					p->parent->child[3] = p->parent->child[2];
+					if (p->parent->child[3] != nullptr)p->parent->child[3]->child_state = 3;
+					n2->child_state = 2;
+					p->parent->child[2] = n2;
+					n2->parent = p->parent;
+					p->child_state = 1;
+					//p->parent->child[1] = n1;
+				
+				}
+				else  if (p->child_state == 2)
+				{
+					n2->child_state = 3;
+					p->parent->child[3] = n2;
+					n2->parent = p->parent;
+					p->child_state = 2;
+					//p->parent->child[2] = n1;
+
+				}
+				//n1->is_leaf = 1;
+				if (p->child[0] == nullptr&&p->child[1] == nullptr&&p->child[2] == nullptr&&p->child[3] == nullptr)
+				{
+					p->is_leaf = 1;
+				}
+				else
+				{
+					p->is_leaf = 0;
+				}
+				if (n2->child[0] == nullptr&&n2->child[1] == nullptr&&n2->child[2] == nullptr&&n2->child[3] == nullptr)
+				{
+					n2->is_leaf = 1;
+				}
+				else
+				{
+					n2->is_leaf = 0;
+				}
+			}
+			else
+			{
+				break_3_value_node(p->parent);
+			}
+		}
+	}
+}
+
+void two34_tree::add(int k) 
+{
+	if (root==nullptr)
+	{
+		node *y = new node();
+		y->add_value(k);
+		y->parent= nullptr;
+		y->child_state = -1;
+		y->is_leaf = 1;
+		root = y;
+	}
+	else
+	{
+		node *y = root;
+		y = find(k);
+		y->add_value(k);
+	}
+}
+
+node* two34_tree::find(int k) 
+{
+	node *n = root;
+	while (true)
+	{
+		if (n->is_leaf==1&&n->num_values<3)
+		{
+			return n;
+		}
+		else if (n->is_leaf == 1)
+		{
+			break_3_value_node(n);
+			if (n->parent!=nullptr)
+			{
+				n = n->parent;
+			}
+		}
+	   if (k<n->value[0])
+		{
+			n = n->child[0];
+			if (n != nullptr && n->is_leaf == 1 && n->num_values<3)
+			{
+				return n;
+			}
+		}
+	   else if ((n->value[0]<k && k<n->value[1])||(n->value[0]<k && n->value[1]==-999))
+		{
+			n = n->child[1];
+			if (n!=nullptr && n->is_leaf == 1 && n->num_values<3)
+			{
+				return n;
+			}
+		}
+	   else if ((n->value[1] < k&& k < n->value[2]) || (n->value[1] < k && n->value[2] == -999)) 
+	   {
+		   n = n->child[2];
+		   if (n != nullptr && n->is_leaf == 1 && n->num_values<3)
+		   {
+			   return n;
+		   }
+	   }
+	   else if (n->value[2] < k )
+	   {
+		   n = n->child[3];
+		   if (n != nullptr && n->is_leaf == 1 && n->num_values<3)
+		   {
+			   return n;
+		   }
+	   }
+	}
+}
+
+
+void two34_tree::in_order_traversal(node * p) {
+	cout << endl;
+	node * p1 = p;
+	if (p1 == nullptr) return;
+	int i;
+	for (i = 0; i < p1->num_values; i++) {
+		in_order_traversal(p1->child[i]);
+		cout << "  " << p1->value[i] << "  " << "child_state = " << p1->child_state<<"   "<<p1->is_leaf;
+	}
+	in_order_traversal(p1->child[i]);
+}
+
+
+int main() {
+	//The following is just an example.
+	//Different test casess can be used during grading.
+
+	two34_tree t1;
+	t1.add(40);
+	t1.add(30);
+	t1.add(20);
+	t1.in_order_traversal(t1.root);
+	t1.add(100);
+	t1.add(120);
+	t1.in_order_traversal(t1.root);
+	t1.add(200);
+	t1.in_order_traversal(t1.root);
+	t1.add(400);
+	t1.in_order_traversal(t1.root);
+	t1.add(600);
+	t1.in_order_traversal(t1.root);
+	t1.remove(20);
+	t1.in_order_traversal(t1.root);
+	t1.remove(200);
+	t1.in_order_traversal(t1.root);
+	t1.remove(100);
+	t1.in_order_traversal(t1.root);
+	getchar();
+	getchar();
+	return 0;
+
+}
+
+
+
+

@@ -1,0 +1,191 @@
+// Assign7cpp.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+#include <stdlib.h>
+#include <iostream>
+#include <deque>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+using namespace std;
+
+
+class parts
+{
+public:
+	int a;
+	int b;
+	int c;
+
+	parts() { a = 0; b = 0; c = 0; }
+	parts(int i, int j, int k) { a = i; b = j; c = k; }
+};
+
+
+mutex m1;
+condition_variable cv1, cv2;
+parts buffer;
+parts pickuprequest();
+parts placerequest();
+void pushtobuffer(parts k,int i) {
+	unique_lock<mutex> ulock(m1);
+	//print
+	cout << endl;
+	cout << "PartWorker ID:" << i << endl;
+	cout << "Buffer State: (" << buffer.a <<","<<buffer.b<<","<<buffer.c<<")"<<endl;
+	cout << "Place Request: (" << k.a << "," << k.b << "," << k.c << ")" << endl;
+	//add to buffer
+	if (buffer.a < 6) {
+		cv2.notify_one();
+		if (buffer.a + k.a > 6) {
+			k.a -= (6 - buffer.a);
+			buffer.a = 6; 
+		}
+		else {
+			buffer.a += k.a;
+			k.a = 0;
+		}
+	}
+	if (buffer.b < 5) {
+		cv2.notify_one();
+		if (buffer.b + k.b > 5) {
+			k.b -= (5 - buffer.b);
+			buffer.b = 5;
+		}
+		else {
+			buffer.b += k.b;
+			k.b = 0;
+		}
+	}
+	if (buffer.c < 4) {
+		cv2.notify_one();
+		if (buffer.c + k.a > 4) {
+			k.c -= ( 4- buffer.c);
+			buffer.c = 4;
+		}
+		else {
+			buffer.c += k.c;
+			k.c = 0;
+		}
+	}
+	cout << "Updated Buffer State: (" << buffer.a << "," << buffer.b << "," << buffer.c << ")" << endl;
+	cout << "Updated Place Request: (" << k.a << "," << k.b << "," << k.c << ")" << endl;
+	if (k.a != 0 || k.b != 0 || k.c != 0) {
+		cv1.wait(ulock);
+		pushtobuffer(k,i);
+	}
+	if (k.a == 0 && k.b == 0 && k.c == 0)
+	{
+		cv2.notify_one();
+	}
+	
+}
+void popfrombuffer(parts k,int j) {
+	
+		unique_lock<mutex> ulock(m1);
+		cout << endl;
+		cout << "ProductWorker ID:" << j << endl;
+		cout << "Buffer State: (" << buffer.a << "," << buffer.b << "," << buffer.c << ")" << endl;
+		cout << "Place Request: (" << k.a << "," << k.b << "," << k.c << ")" << endl;
+		if (buffer.a > 0) {
+			cv1.notify_one();
+			if (buffer.a - k.a > 0) {
+				buffer.a -= k.a;
+				k.a = 0;
+			}
+			else {
+				k.a = k.a - buffer.a;
+				buffer.a = 0;
+			}
+		}
+		if (buffer.b > 0) {
+			cv1.notify_one();
+			if (buffer.b - k.b > 0) {
+				buffer.b -= k.b;
+				k.b = 0;
+			}
+			else {
+				k.b = k.b - buffer.b;
+				buffer.b = 0;
+			}
+		}
+		if (buffer.c > 0) {
+			cv1.notify_one();
+			if (buffer.c - k.c > 0) {
+				buffer.c -= k.c;
+				k.c = 0;
+			}
+			else {
+				k.c = k.c - buffer.c;
+				buffer.c = 0;
+			}
+		}
+		cout << "Updated Buffer State: (" << buffer.a << "," << buffer.b << "," << buffer.c << ")" << endl;
+		cout << "Updated Place Request: (" << k.a << "," << k.b << "," << k.c << ")" << endl;
+		if (k.a != 0|| k.b != 0 || k.c != 0) {
+			cv2.wait(ulock);
+			popfrombuffer(k,j);
+		}
+		if (k.a == 0 && k.b == 0 && k.c == 0)
+		{
+			cv1.notify_one();
+		}
+	
+}
+
+void PartWorker(int i)
+{
+	while (true)
+	{
+		parts place = placerequest();
+		pushtobuffer(place,i);
+	}
+}
+
+parts placerequest() {
+	parts arr1[] = {parts(0,0,3),parts(0,3,0),parts(3,0,0),parts(1,1,1),parts(2,1,0),parts(0,1,2),parts(1,0,2),parts(2,0,1),parts(0,2,1),parts(1,2,0)};
+	int r = rand() % 10;
+	return arr1[r];
+}
+void ProductWorker(int j)
+{
+	while (true)
+	{
+		parts pick = pickuprequest();
+		popfrombuffer(pick,j);
+	}
+	
+
+}
+
+parts pickuprequest() {
+	parts arr1[] = { parts(0,1,3),parts(0,3,1),parts(1,3,0),parts(3,1,0),parts(1,0,3),parts(3,0,1),parts(0,2,2),parts(2,2,0),parts(2,0,2) };
+	int r = rand() % 9;
+	return arr1[r];
+}
+
+
+
+
+int main() {
+	thread partW[10];
+	thread prodW[7];
+	for (int i = 0; i < 7; i++) {
+		partW[i] = thread(PartWorker, i);
+		prodW[i] = thread(ProductWorker, i);
+	}
+	for (int i = 7; i < 10; i++) {
+		partW[i] = thread(PartWorker, i);
+	}
+	/* Join the threads to the main threads */
+	for (int i = 0; i < 7; i++) {
+		partW[i].join();
+		prodW[i].join();
+	}
+	for (int i = 7; i < 10; i++) {
+		partW[i].join();
+	}
+	cout << "Finish!" << endl;
+	return 0;
+}

@@ -1,0 +1,402 @@
+
+AUTHOR- SHUBHAM RAMESH JIWTODE #870427143
+Syracuse University.
+
+..........................................................................*/
+
+
+#include "stdafx.h"
+#include <iostream>
+#include <vector>
+using namespace std;
+
+
+class point {
+public:
+
+	float x;
+	float y;
+	point() { x = 0.00; y = 0.00; }
+	~point();
+	point(float i, float j) { x = i; y = j; }
+	point(const point &P);
+	void set(float i, float j);
+	point get();
+	void show();
+	point operator+(point &t);
+	point operator-(point &t);
+};
+
+void point::show() 
+{
+	cout << endl << "  x=" << this->x << "  y=" << this->y;
+}
+
+
+void point::set(float i, float j) {
+	this->x = i;
+	this->y = j;
+}
+
+point point::get() 
+{
+	point p1(this->x, this->y);
+	return p1;
+}
+
+point::~point() 
+{
+}
+point point::operator+(point &t)
+{
+	point p;
+	p.x = this->x + t.x;
+	p.y = this->y + t.y;
+	return p;
+}
+point point::operator-(point &t)
+{
+	point p;
+	p.x = this->x - t.x;
+	p.y = this->y - t.y;
+	return p;
+}
+
+point::point(const point &P) 
+{
+	this->x = P.x;
+	this->y = P.y;
+}
+
+class shape {
+protected:
+	vector<point> corners;//Remember that the points of corners might not follow the nature order.
+	~shape() {
+	}
+	float a, p;
+	virtual float area()=0;
+	virtual float perimeter()=0;
+};
+class triangle:shape
+{
+public:
+	triangle() 
+	{
+		a = 0.00;
+		p = 0.00;
+	}
+
+	triangle(point i, point j, point k);
+	
+	triangle(triangle &t) 
+	{
+		this->corners = t.corners;
+		this->a = t.a;
+		this->p = t.p;
+	}
+
+	void show();
+
+	float area();
+	float perimeter();
+
+};
+void triangle::show()
+{
+	float a = area();
+	float p = perimeter();
+	cout << endl << "area of triangle=" << a;
+	cout << endl << "perimeter of triangle=" << p;
+}
+
+
+triangle::triangle(point i, point j, point k) 
+{
+	this->corners.push_back(i);
+	this->corners.push_back(j);
+	this->corners.push_back(k);
+}
+
+float triangle::area() 
+{
+	point i = corners[0];
+	point j = corners[1];
+	point k = corners[2];
+	if (((j.y-i.y)*(k.x-j.x))!=((k.y-j.y)*(j.x-i.x)))
+	{
+
+
+		float l1 = sqrt(((abs(j.x - i.x))*(abs(j.x - i.x))) + ((abs(j.y - i.y))*(abs(j.y - i.y))));
+		float l2 = sqrt(((abs(j.x - k.x))*(abs(j.x - k.x))) + ((abs(j.y - k.y))*(abs(j.y - k.y))));
+		float l3 = sqrt(((abs(k.x - i.x))*(abs(k.x - i.x))) + ((abs(k.y - i.y))*(abs(k.y - i.y))));
+
+		float p = l1 + l2 + l3;
+
+		float s = p / 2;
+
+		a = sqrt(s*(s - l1)*(s - l2)*(s - l3));
+		return a;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+float triangle::perimeter() 
+{
+
+	point i = corners[0];
+	point j = corners[1];
+	point k = corners[2];
+
+	if (((j.y - i.y)*(k.x - j.x)) != ((k.y - j.y)*(j.x - i.x)))
+	{
+
+		float l1 = sqrt(((abs(j.x - i.x))*(abs(j.x - i.x))) + ((abs(j.y - i.y))*(abs(j.y - i.y))));
+		float l2 = sqrt(((abs(j.x - k.x))*(abs(j.x - k.x))) + ((abs(j.y - k.y))*(abs(j.y - k.y))));
+		float l3 = sqrt(((abs(k.x - i.x))*(abs(k.x - i.x))) + ((abs(k.y - i.y))*(abs(k.y - i.y))));
+		p = l1 + l2 + l3;
+		return p;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+class rectangle: public shape{
+public:
+
+	rectangle() {
+		a = 0.00;
+		p = 0.00;
+	}
+	
+	rectangle(point i, point j, point k,point l) {
+		this->corners.push_back(i);
+		this->corners.push_back(j);
+		this->corners.push_back(k);
+		this->corners.push_back(l);
+	}
+	rectangle(rectangle &r)
+	{
+		this->corners = r.corners;
+		this->a = r.a;
+		this->p = r.a;
+	}
+	rectangle(point i, point j);
+	void show();
+	
+	float area();
+	float perimeter();
+};
+rectangle::rectangle(point i, point j)
+{
+	
+	point k;
+	k.set(i.x,j.y);
+	point l;
+	l.set(j.x, i.y);
+	this->corners.push_back(i);
+	this->corners.push_back(j);
+	this->corners.push_back(k);
+	this->corners.push_back(l);
+
+}
+
+void rectangle::show()
+{
+	float a = area();
+	float p = perimeter();
+	cout << endl << "area of rectangle=" << a;
+	cout << endl << "perimeter of rectangle=" << p;
+}
+
+
+float rectangle::area() 
+{
+	point i = corners[0];
+	point j = corners[1];
+	point k = corners[2];
+	point l = corners[3];
+
+	if (((j.y - i.y)*(k.x - j.x)) != ((k.y - j.y)*(j.x - i.x)))
+	{
+
+
+		float l1 = sqrt(((abs(j.x - i.x))*(abs(j.x - i.x))) + ((abs(j.y - i.y))*(abs(j.y - i.y))));
+		float l2 = sqrt(((abs(j.x - k.x))*(abs(j.x - k.x))) + ((abs(j.y - k.y))*(abs(j.y - k.y))));
+		float l3 = sqrt(((abs(k.x - l.x))*(abs(k.x - l.x))) + ((abs(k.y - l.y))*(abs(k.y - l.y))));
+		float l4 = sqrt(((abs(l.x - i.x))*(abs(l.x - i.x))) + ((abs(l.y - i.y))*(abs(l.y - i.y))));
+		float l5 = sqrt(((abs(k.x - i.x))*(abs(k.x - i.x))) + ((abs(k.y - i.y))*(abs(k.y - i.y))));
+		float l6 = sqrt(((abs(l.x - j.x))*(abs(l.x - j.x))) + ((abs(l.y - j.y))*(abs(l.y - j.y))));
+
+		vector<float> v1;
+		v1.push_back(l1);
+		v1.push_back(l2);
+		v1.push_back(l3);
+		v1.push_back(l4);
+		v1.push_back(l5);
+		v1.push_back(l6);
+
+
+		for (int j = 0; j < v1.size(); j++)
+		{
+			for (int i = 0; i < v1.size() - 1; i++)
+			{
+				if (v1[i] > v1[i + 1])
+				{
+					swap(v1[i], v1[i + 1]);
+				}
+			}
+		}
+		int xx = int(sqrt((v1[0] * v1[0]) + (v1[2] * v1[2])));
+
+		if (v1[0] == v1[1] && v1[2] == v1[3] && v1[4] == v1[5])
+		{
+			a = v1[0] * v1[2];
+			return a;
+		}
+	}
+	return 0;
+}
+
+float rectangle::perimeter() 
+{
+	point i = corners[0];
+	point j = corners[1];
+	point k = corners[2];
+	point l = corners[3];
+
+	if (((j.y - i.y)*(k.x - j.x)) != ((k.y - j.y)*(j.x - i.x)))
+	{
+
+
+		float l1 = sqrt(((abs(j.x - i.x))*(abs(j.x - i.x))) + ((abs(j.y - i.y))*(abs(j.y - i.y))));
+		float l2 = sqrt(((abs(j.x - k.x))*(abs(j.x - k.x))) + ((abs(j.y - k.y))*(abs(j.y - k.y))));
+		float l3 = sqrt(((abs(k.x - l.x))*(abs(k.x - l.x))) + ((abs(k.y - l.y))*(abs(k.y - l.y))));
+		float l4 = sqrt(((abs(l.x - i.x))*(abs(l.x - i.x))) + ((abs(l.y - i.y))*(abs(l.y - i.y))));
+		float l5 = sqrt(((abs(k.x - i.x))*(abs(k.x - i.x))) + ((abs(k.y - i.y))*(abs(k.y - i.y))));
+		float l6 = sqrt(((abs(l.x - j.x))*(abs(l.x - j.x))) + ((abs(l.y - j.y))*(abs(l.y - j.y))));
+
+		vector<float> v1;
+		v1.push_back(l1);
+		v1.push_back(l2);
+		v1.push_back(l3);
+		v1.push_back(l4);
+		v1.push_back(l5);
+		v1.push_back(l6);
+
+		for (int j = 0; j < v1.size(); j++)
+		{
+			for (int i = 0; i < v1.size() - 1; i++)
+			{
+				if (v1[i] > v1[i + 1])
+				{
+					swap(v1[i], v1[i + 1]);
+				}
+			}
+		}
+
+		if (v1[0] == v1[1] && v1[2] == v1[3])
+		{
+			p = v1[0] + v1[1] + v1[2] + v1[3];
+			return p;
+		}
+	}
+	return 0;
+}
+
+class square:public rectangle{
+public:
+	square() {
+		a = 0;
+		p = 0;
+	}
+	square(point i, point j, point k, point l) {
+		this->corners.push_back(i);
+		this->corners.push_back(j);
+		this->corners.push_back(k);
+		this->corners.push_back(l);
+	}
+
+	square(point i, point j);
+
+	square(square &s)
+	{
+		this->corners = s.corners;
+		this->a = s.a;
+		this->p = s.p;
+	}
+	void show();
+
+};
+
+square::square(point i, point j) 
+{
+	
+	point k(((i.x + j.x + i.y - j.y) / 2), ((j.x-i.x + i.y + j.y) / 2));
+    point l(((i.x + j.x + j.y - i.y) / 2), ((i.x - j.x + i.y + j.y) / 2));
+	this->corners.push_back(i);
+	this->corners.push_back(j);
+	this->corners.push_back(k);
+	this->corners.push_back(l);
+
+}
+
+void square::show() 
+{
+	float a = area();
+	float p = perimeter();
+	cout << endl << "area of square=" << a;
+	cout << endl << "perimeter of square=" << p;
+}
+
+/*
+
+Since each of you might implement member functions differently, the main function will be provided by you based on your design.
+However, you need to be able to declare and initialize instances of all classes derived from shape.
+In addtion, for all such instances, you need to be able to obtain area and perimeter.
+
+Other parts of main function will be provided by you based on your own design.
+
+*/
+
+int main() {
+	point p1(2, 6), p2(3,5), p3(6,8), p4(8,6), p5(5,3), p6(0,1),p7(0,0),p8(1,0),p9(1,1),p10(3,7),p11(6,4),p18,p19;
+	
+	p18 = p1 + p2;
+	
+	p19 = p1 - p2;
+	p1.show();
+	p2.show();
+	p3.show();
+	cout << endl << "-----------";
+	cout << endl << "p1+p2";
+	p18.show();
+	cout << endl << "-----------";
+	cout << endl << "p1-p2";
+	p19.show();
+	cout << endl << "-----------";
+	triangle t1(p1, p10, p11);
+	t1.show();
+	cout << endl << "-----------";
+	rectangle r1(p2, p3, p4, p5);
+	r1.show();
+	cout << endl << "-----------";
+	point p14(0, 1),p15(5,4);
+	rectangle r2(p14, p15);
+	r2.show();
+	cout << endl << "-----------";
+	square s1(p6, p7, p8, p9);
+	s1.show();
+	cout << endl << "-----------";
+	point p12(0, 1), p13(1, 0);
+	square s2(p12, p13);
+	s2.show();
+	cout << endl << "-----------";
+	getchar();
+	return 0;
+}

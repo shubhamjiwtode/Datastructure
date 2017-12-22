@@ -1,0 +1,363 @@
+
+AUTHOR- SHUBHAM RAMESH JIWTODE #870427143
+Syracuse University.
+
+..........................................................................*/
+// assign5ada.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+//HW5 CSE674
+//Due: Sunday (Nov. 5) at 11:59PM
+//You need to implement the following three functions
+//
+//void merge_sort(node * p, int i);
+//void merge(node * p1, int i1, node * p2, int i2);
+//void merge_sort(vector<int> &V);
+//Read the requirements stated below.
+
+
+#include <iostream>
+#include <list>
+#include <vector>
+
+using namespace std;
+
+class node {
+public:
+	int value;
+	node * next;
+	node() { next = nullptr; }
+	node(int i) { value = i; next = nullptr; }
+};
+
+
+class linked_list {
+public:
+	int num_nodes;
+	node * head;
+	linked_list() { num_nodes = 0; head = nullptr; }
+	void make_list(int k, int m);
+	void print();
+	//****************************************************************************************************************************************
+	void merge_sort(node * p, int i); //Sort the portion (i nodes) of linked list beginning at the node pointed by p.
+									  //You will implement the algoeithm using a recursive approach.
+									  //In-place merge sort is required; that is, you are not allowed to create a separate linked list, etc. to perform sorting.
+
+
+									  //You need to also implement the following merge funciton, which
+									  //merges two already sorted porttion of linked list beginning at nodes pointed by p1 and p2, with sizes being i1 nodes and i2 nodes, respectively.
+									  //Assume that these two portions are adjacent.
+									  //That is, the last node of the first portion is immediately followed by the first node of the second portion.
+
+
+	void merge(node * p1, int i1, node * p2, int i2);
+	//*******************************************************************************************************************************************
+
+};
+vector<int> merge(vector<int> left, vector<int> right);
+void linked_list::merge_sort(node * p, int i)
+{
+	node* p1 = p;
+	node* p2 = p;
+	float f = i;
+	int l = ceil(f / 2);
+	int r = (i - l);
+	if (i>1)
+	{
+
+
+
+		//cout << endl << "------------" << l << "  " << r;
+		merge_sort(p1, l);
+		for (size_t j = 0; j < l; j++)
+		{
+			p2 = p2->next;
+		}
+		merge_sort(p2, r);
+		merge(p1, l, p2, r);
+
+	}
+
+
+}
+
+void linked_list::merge(node * p1, int i1, node * p2, int i2)
+{
+
+
+
+
+
+	node*t1 = p1;
+	node*t2 = p2;
+	node* cur = nullptr;
+	int x = i1;
+	int y = i2;
+
+	if (t1->value > t2->value && x == 1 && y == 1)
+	{
+		int n = 0;
+		n = t1->value;
+		t1->value = t2->value;
+		t2->value = n;
+
+	}
+
+	if (x > 1 || y>1)
+	{
+		node*np1 = p1;
+		node*np2 = p2;
+
+		for (size_t i = 0; i < i1 - 1; i++)
+		{
+			np1 = np1->next;
+		}
+		np1->next = nullptr;
+		for (size_t i = 0; i < i2; i++)
+		{
+			np2 = np2->next;
+		}
+
+		if (t1->value > t2->value)
+		{
+			int n = 0;
+			n = t1->value;
+			t1->value = t2->value;
+			t2->value = n;
+			if (t2->next != nullptr&&t2->value>t2->next->value && y == 2)
+			{
+				int n = 0;
+				n = t2->next->value;
+				t2->next->value = t2->value;
+				t2->value = n;
+			}
+		}
+		while (t1 != nullptr)
+		{
+			if (t1->value > t2->value)
+			{
+				int n = 0;
+				n = t1->value;
+				t1->value = t2->value;
+				t2->value = n;
+				if (t2->next != nullptr&&t2->value>t2->next->value && y == 2)
+				{
+					int n = 0;
+					n = t2->next->value;
+					t2->next->value = t2->value;
+					t2->value = n;
+				}
+			}
+			if (t1->next != nullptr && t1->value <= t2->value && t2->value < t1->next->value&& t1 != t2)
+			{
+				cur = t2;
+				t2 = t2->next;
+				cur->next = t1->next;
+				t1->next = cur;
+				np1->next = t2;
+
+			}
+			else if (t1->next != nullptr && t1->value <= t2->value && t2->value < t1->next->value&&t1 != t2)
+			{
+				cur = t2;
+				t2 = t2->next;
+				cur->next = t1->next;
+				t1->next = cur;
+				np1->next = t2;
+
+			}
+			else if (t1->next == nullptr &&t2->value >= t1->value)
+			{
+
+				t1->next = t2;
+				//return;
+			}
+			else if (t1->next == nullptr &&t2->value > t1->value)
+			{
+
+				t1->next = t2;
+				//return;
+			}
+			else if (t1->next != nullptr && t2->value >= t1->next->value)
+			{
+				t1 = t1->next;
+			}
+			else if (t1 == np1 && t2->value>t1->next->value)
+			{
+				t1 = t1->next;
+			}
+			else if (t1 != nullptr && t2->value>t1->value)
+			{
+				t1 = t1->next;
+			}
+			if (t2 == np2)
+			{
+				return;
+			}
+			if (t1->next == np2 &&t2->next == np2)
+			{
+				return;
+			}
+			if (t1 == t2)
+			{
+				t2 = t2->next;
+			}
+		}
+
+	}
+}
+
+void linked_list::make_list(int k, int m) {
+	for (int i = 0; i < k; i++) {
+		node * p = new node(rand() % m);
+		p->next = head;
+		head = p;
+		num_nodes++;
+	}
+}
+
+
+void linked_list::print() {
+	node * p = head;
+	cout << endl;
+	while (p != nullptr) {
+		cout << p->value << " ";
+		p = p->next;
+	}
+}
+
+void make_random_vector(vector<int> &V, int k, int m) {
+	for (int i = 0; i < k; i++) V.push_back(rand() % m);
+}
+
+//***********************************************************************************************************************
+//Using iterative (i.e., non_recursive) approach to implement merge sort.
+
+//***********************************************************************************************************************
+void merge_sort(vector<int> &V)
+{
+	vector<int> temp;
+	int first = 0;
+	int last = 0;
+	int mid = 0;
+
+	for (int intervalsize = 1; intervalsize <= V.size()-1; intervalsize*=2)
+	{
+		for (int first = 0; first < V.size() - 1; first += 2 * intervalsize)
+		{
+			//cout << intervalsize << "   " << first<<" "<<endl;
+			if (first + intervalsize - 1 < V.size() - 1)
+			{
+				mid = first + intervalsize - 1;
+			}
+			else
+			{
+				mid = V.size() - 1;
+			}
+
+			if (first+2*intervalsize-1<V.size()-1)
+			{
+				last = first + 2 * intervalsize - 1;
+			}
+			else
+			{
+				last = V.size() - 1;
+			}
+
+			vector<int> left;
+			for (int i = first; i <= mid; i++)
+			{
+				left.push_back(V[i]);
+			}
+			//cout << "Last is" << last;
+			vector<int> right;
+			for (int j = mid + 1; j <= last; j++)
+			{
+				right.push_back(V[j]);
+			}
+
+
+			temp = merge(left, right);
+			for (int i = 0; i < temp.size(); i++)
+			{
+				V[i + first] = temp[i];
+
+			}
+
+		}
+	}
+
+
+}
+
+
+vector<int> merge(vector<int> left, vector<int> right) 
+{
+	int t = 0;
+	int r = 0;
+	int l = 0;
+	vector<int> temp;
+	
+
+
+		while (l < left.size() && r < right.size())
+		{
+			if (right[r] > left[l])
+			{
+				temp.push_back(left[l]);
+				l++;
+			}
+			else if (right[r] < left[l])
+			{
+				temp.push_back(right[r]);
+				r++;
+			}
+			else if (right[r] == left[l])
+			{
+				temp.push_back(right[r]);
+				r++;
+				temp.push_back(left[l]);
+				l++;
+			}
+		}
+		if (l == left.size() && r != right.size())
+		{
+			while (r != right.size()) {
+				temp.push_back(right[r]);
+				r++;
+			}
+
+		}
+		if (l != left.size() && r == right.size())
+		{
+			while (l != left.size()) {
+				temp.push_back(left[l]);
+				l++;
+			}
+
+		}
+	
+	return temp;
+}
+
+int main() {
+
+	vector<int> V;
+	make_random_vector(V, 20, 50);
+	cout << endl;
+	for (size_t i = 0; i < V.size(); i++) cout << V[i] << " ";
+	merge_sort(V);
+	cout << endl;
+	for (size_t i = 0; i < V.size(); i++) cout << V[i] << " ";
+
+	linked_list L1;
+	L1.make_list(16, 30);
+	L1.print();
+	L1.merge_sort(L1.head, L1.num_nodes);
+	L1.print();
+
+	getchar();
+	getchar();
+	return 0;
+}

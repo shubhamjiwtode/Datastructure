@@ -1,0 +1,103 @@
+
+AUTHOR- SHUBHAM RAMESH JIWTODE #870427143
+Syracuse University.
+
+..........................................................................*/
+
+//HW5 Threaded Quicksort
+//Due:  Tuesday (11/7) at 11:59PM
+//You need to create 4 new thread to perform quick_sort
+//Total Points: 25
+#include "stdafx.h"
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <iostream>
+#include <fstream>
+using namespace std;
+ofstream out("data1.txt");
+//The following funciton will be the work for each thread
+void quick_sort(vector<int> &V, int i, int j); //sort elements of vector V from position i to position j
+int split(vector<int> &V, int i, int j);
+void quick_sort(vector<int> &V, int i, int j) {
+	thread t1;
+	thread t2;
+	if (i < j)
+	{
+		int cur = split(V, i, j);
+		/*t1 = thread(quick_sort,ref(V), i, cur - 2);
+		
+		t2 = thread(quick_sort,ref(V), cur, j);
+		t1.join();
+		t2.join();*/
+		quick_sort( V, i, cur - 2);
+		quick_sort(V, cur, j);
+	}
+}
+
+int split(vector<int> &V, int i, int j)
+{
+	int p = i;
+	int cnt = i + 1;
+	int cur = i + 1;
+	for (int t = cnt; t <= j; t++)
+	{
+		if (V[t] <= V[p])
+		{
+			int temp = V[t];
+			V[t] = V[cur];
+			V[cur] = temp;
+			cur++;
+		}
+	}
+
+	int temp = V[cur - 1];
+	V[cur - 1] = V[p];
+	V[p] = temp;
+	return cur;
+}
+
+int main() {
+	int n =100000;
+
+	thread t1;
+	thread t2;
+	thread t3;
+	thread t4;
+	vector<int> V(n);//V has n elements.
+	for (int i = 0; i < n; i++) V[i] = rand() % 500;
+	for (size_t i = 0; i <= n-1; i++)
+	{
+		cout << V[i] << " ";
+	}
+	cout << endl;
+
+	int q2 = split(V, 0, n - 1);
+	//cout <<endl<< V[q2 - 1]<<endl;
+	int q1= split(V, 0, q2-2);
+	//cout << endl << V[q1 - 1] << endl;
+	t1 = thread(quick_sort, ref(V), 0, q1 - 2);
+	t2 = thread(quick_sort, ref(V), q1, q2 - 2);
+
+
+	int q3= split(V, q2, n - 1);
+	//cout << endl << V[q3 - 1] << endl;
+	t3 = thread(quick_sort, ref(V), q2, q3 - 1);
+	t4 = thread(quick_sort, ref(V), q3, n-1);
+
+	t1.join();
+	t2.join();
+	t3.join();
+	t4.join();
+	for (size_t i = 0; i <= n - 1; i++)
+	{
+
+		cout << V[i] << " ";
+		out<< V[i] << " ";
+	}
+	out.close();
+	
+	
+}
+
+

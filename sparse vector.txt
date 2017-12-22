@@ -1,0 +1,238 @@
+
+
+AUTHOR- SHUBHAM RAMESH JIWTODE #870427143
+Syracuse University.
+
+..........................................................................*/
+
+
+
+
+#include "stdio.h"
+#include "stdafx.h"
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+ofstream out("data1.txt");
+class node {
+public:
+	int value;
+	int position;
+	node * next;
+	node() { value = -9999; position = -1; next = nullptr; }
+	node(int i, int j) { value = i; position = j; next = nullptr; }
+};
+
+class my_vector {
+public:
+	int size;
+	int num_nodes; //number of non-zero elements
+	node * head;
+	my_vector() { size = num_nodes = 0; head = nullptr; }
+
+	void add_node(int v, int p); //add a new node with value v and position p;
+								 //if a node at position p already exists, update its value to v
+
+	void make_random_vector(int s, int n, int k);
+	//set the value of size  to s;
+	//randomly create n nodes in -(k-1) to k-1
+
+	my_vector operator+(my_vector V); //vector addition
+
+	int operator*(my_vector V);//inner product
+//
+	void print();
+};
+
+void my_vector::add_node(int v, int p) {
+	
+	node *prev,*pcur=head;
+	node *p1 = new node();
+	p1->position = p;
+	p1->value = v;
+	p1->next = nullptr;
+
+	if (head==nullptr)              //when no value is present
+	{
+		if (p1->value!=0)
+		{
+			head = p1;
+		}
+		return;
+	}
+	prev = nullptr;
+	pcur = head;
+	while (pcur != nullptr)
+	{
+		
+		//if position is less that the position of current pointer
+		if (pcur->position > p && pcur == head)
+		{
+			if (v != 0) {                                         
+			p1->next = pcur;
+			head = p1;}
+			return;
+		}
+		//to replace the value at same position 
+		if (pcur->position == p)
+		{  
+			pcur->value = v;
+			
+			if (prev==nullptr && v==0)
+			{head= pcur->next;
+				delete(pcur);}                //if value is 0 replace and delete it
+			if (prev!=nullptr && v==0)             
+			{	prev->next = pcur->next;
+				delete(pcur);}
+
+			return;
+		}
+
+		if (p > pcur->position && pcur->next!=nullptr && p < pcur->next->position)
+		{
+			if (v!=0)
+			{
+				p1->next = pcur->next;         // to add node at middle position
+				pcur->next = p1;
+			}
+			return;
+		}
+
+		if (p > pcur->position && pcur->next == nullptr)
+		{
+			if (v!=0)
+			{
+				p1->next = pcur->next;                      //to add node at last position
+				pcur->next = p1;
+			}
+			
+			return;
+		}
+		prev = pcur;
+		pcur = pcur->next;
+	}
+
+}
+
+
+void my_vector::make_random_vector(int s, int n, int k) {
+	size = s;
+	for (int i = 0; i < n; i++) {
+		int p = rand() % s;
+		int v = rand() % (2 * k - 1) - (k - 1);
+		//cout << v << "  " << p<<;
+		add_node(v,p);
+		
+	}
+}
+
+void my_vector::print() {
+	out << endl;
+	node * p = head;
+	while (p != nullptr) {
+		out << p->value << " " << p->position << "  ";
+		p = p->next;
+	}
+}
+
+my_vector my_vector::operator + (my_vector V) {
+	my_vector temp;
+	node *p1 = this->head, *p2 = V.head;
+
+	if (this->size == V.size)
+	{
+		while ((p1 != nullptr) && (p2 != nullptr))
+		{
+			if ((p1->position > p2->position))
+			{
+				temp.add_node(p2->value, p2->position);
+				p2 = p2->next;
+				                                                       //when value is at different position
+			}
+			else if ((p1->position < p2->position))                                     
+			{
+				temp.add_node(p1->value, p1->position);
+				p1 = p1->next;
+
+			}
+			else if (p1->position == p2->position)                             //adding value at same position
+			{
+				temp.add_node((p1->value + p2->value), p1->position);
+				p1 = p1->next;
+				p2 = p2->next;
+
+			}
+		}                                                                     //when one (p1 or p2) becomes null but other still has a value
+		if (p1 != nullptr && p2==nullptr)
+		{ 
+			while(p1!=nullptr)
+			{
+			  temp.add_node(p1->value, p1->position);
+			  p1 = p1->next;
+			}	
+		}
+		if (p2 != nullptr && p1==nullptr)
+		{
+			while (p2!=nullptr)
+			{
+				temp.add_node(p2->value, p2->position);
+				p2 = p2->next;
+			}
+		}
+	}
+	else
+	{
+		temp.add_node(-9999, -9999);
+		cout <<endl<< "cant add vectors of different size"<<endl;
+	}
+	return temp;
+}
+
+int my_vector:: operator*(my_vector V)
+{
+	node *p1 = this->head, *p2 = V.head;
+	my_vector temp;
+	int x=0;
+	if (this->size==V.size)
+	{
+		while (p1!=nullptr)
+		{
+			while(p2 != nullptr)
+			{
+				if (p1->position == p2->position)
+				{
+					x = x + (p1->value * p2->value);         
+				}
+				p2 = p2->next;
+			}
+			p2 = V.head;
+			p1 = p1->next;
+
+		}
+	}else
+	{
+		cout <<endl<< "cant multiply vector of different size"<<endl;
+		x = -9999999;
+	}
+	return x;
+}
+
+
+int main() {
+
+	my_vector V1, V2, V3;
+	V1.make_random_vector(30, 8, 10);
+	V1.print();
+	V2.make_random_vector(30, 6, 10);
+	V2.print();
+	V3 = V1 + V2;
+	V3.print();
+	int inner_product = V1 * V2;
+	out << endl;
+	out << inner_product << endl;
+
+	out.close();
+	return 0;
+
+}
